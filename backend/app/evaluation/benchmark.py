@@ -1,6 +1,6 @@
 import json
 import time
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from backend.app.models.schemas import BenchmarkItem, EvaluationResult, AggregateEvaluationReport, QueryRequest
 from backend.app.evaluation.metrics import RAGEvaluatorMetrics
 from backend.app.generation.grounded_generator import grounded_generator

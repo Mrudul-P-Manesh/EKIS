@@ -53,7 +53,7 @@ class BM25Retriever:
         scored_candidates = []
         for idx, score in enumerate(scores):
             chunk = self.chunks[idx]
-            metadata = chunk.metadata.dict() if hasattr(chunk.metadata, "dict") else chunk.metadata
+            metadata = chunk.metadata.model_dump() if hasattr(chunk.metadata, "model_dump") else chunk.metadata
 
             if filter_service and metadata.get("service_name") != filter_service:
                 continue
@@ -82,7 +82,7 @@ class BM25Retriever:
 
         results = []
         for rank, (score, chunk) in enumerate(top_items, 1):
-            metadata_dict = chunk.metadata.dict() if hasattr(chunk.metadata, "dict") else chunk.metadata
+            metadata_dict = chunk.metadata.model_dump() if hasattr(chunk.metadata, "model_dump") else chunk.metadata
             results.append(BM25SearchResult(
                 chunk_id=chunk.chunk_id,
                 doc_id=chunk.doc_id,

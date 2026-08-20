@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 
@@ -13,7 +13,7 @@ class DocumentMetadata(BaseModel):
     file_name: str
     file_path: Optional[str] = None
     service_name: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     version: Optional[str] = "1.0"
     author: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
@@ -39,7 +39,7 @@ class Document(BaseModel):
     content: str
     metadata: DocumentMetadata
     chunks: List[DocumentChunk] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class IngestionRequest(BaseModel):
@@ -280,4 +280,4 @@ class AggregateEvaluationReport(BaseModel):
     hallucination_rate: float
     average_latency_ms: float
     results: List[EvaluationResult] = Field(default_factory=list)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

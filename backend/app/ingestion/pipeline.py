@@ -75,7 +75,7 @@ class IngestionPipeline:
                 "start_char": c.start_char,
                 "end_char": c.end_char,
                 "section_heading": c.section_heading,
-                "metadata": c.metadata.dict() if hasattr(c.metadata, "dict") else c.metadata
+                "metadata": c.metadata.model_dump() if hasattr(c.metadata, "model_dump") else c.metadata
             }
             for c in chunks
         ]

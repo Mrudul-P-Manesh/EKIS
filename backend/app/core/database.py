@@ -64,8 +64,8 @@ class MetadataDatabase:
     def save_document(self, doc_data: Dict[str, Any], chunks: List[Dict[str, Any]]):
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            tags = json.dumps(doc_data.get("tags", []))
-            custom_attrs = json.dumps(doc_data.get("custom_attributes", {}))
+            tags = json.dumps(doc_data.get("tags", []), default=str)
+            custom_attrs = json.dumps(doc_data.get("custom_attributes", {}), default=str)
             
             cursor.execute("""
                 INSERT OR REPLACE INTO documents (
@@ -100,7 +100,7 @@ class MetadataDatabase:
                     chunk.get("start_char", 0),
                     chunk.get("end_char", 0),
                     chunk.get("section_heading"),
-                    json.dumps(chunk.get("metadata", {}))
+                    json.dumps(chunk.get("metadata", {}), default=str)
                 ))
             conn.commit()
 

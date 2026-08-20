@@ -116,12 +116,22 @@ class VectorRetriever:
                 if conditions:
                     query_filter = rest_models.Filter(must=conditions)
 
-                search_res = self.client.search(
-                    collection_name=self.collection_name,
-                    query_vector=query_vec,
-                    query_filter=query_filter,
-                    limit=top_k
-                )
+                if hasattr(self.client, "query_points"):
+                    search_res = self.client.query_points(
+                        collection_name=self.collection_name,
+                        query=query_vec,
+                        query_filter=query_filter,
+                        limit=top_k
+                    ).points
+                elif hasattr(self.client, "search"):
+                    search_res = self.client.search(
+                        collection_name=self.collection_name,
+                        query_vector=query_vec,
+                        query_filter=query_filter,
+                        limit=top_k
+                    )
+                else:
+                    search_res = []
 
                 for rank, hit in enumerate(search_res, 1):
                     p = hit.payload or {}
@@ -129,13 +139,14 @@ class VectorRetriever:
                         chunk_id=p.get("chunk_id", str(hit.id)),
                         doc_id=p.get("doc_id", ""),
                         content=p.get("content", ""),
-                        similarity_score=float(hit.score),
+                        similarity_score=float(hit.score if hasattr(hit, "score") else 1.0),
                         rank=rank,
                         metadata=p
                     ))
-                return results
+                if results:
+                    return results
             except Exception as e:
-                logger.warning(f"Qdrant search error: {e}. Falling back to in-memory cosine search.")
+                logger.warning(f"Qdrant search exception: {e}. Using in-memory cosine fallback.")
 
         # In-memory cosine search fallback
         q_arr = np.array(query_vec, dtype=np.float32)
