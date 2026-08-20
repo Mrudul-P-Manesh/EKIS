@@ -1,0 +1,10 @@
+jwt:
+  issuer: "https://auth.company.internal"
+  audience: "https://api.company.internal"
+  algorithm: "RS256"
+  token_ttl_seconds: 900
+  refresh_token_ttl_seconds: 2592000
+  key_rotation_interval_days: 30
+  jwks_cache_ttl_seconds: 86400
+  grace_period_hours: 48
+  emergency_cache_flush_endpoint: "/admin/cache/refresh"

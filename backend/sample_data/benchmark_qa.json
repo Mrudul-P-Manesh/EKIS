@@ -1,0 +1,26 @@
+[
+  {
+    "id": "qa-1",
+    "query": "Why is the authentication service returning 401 errors after deployment?",
+    "ground_truth_answer": "Downstream services cached previous public keys for 24 hours without cache invalidation during ADR-004 key rotation.",
+    "expected_doc_ids": ["adr_004", "auth_runbook", "incident_401"],
+    "expected_entities": ["auth-service", "ADR-004", "401-Unauthorized", "JWT_SECRET_KEY"],
+    "category": "Incident Resolution"
+  },
+  {
+    "id": "qa-2",
+    "query": "What is the token expiration TTL and key rotation policy specified in ADR-004?",
+    "ground_truth_answer": "ADR-004 specifies a 30-day key rotation cycle and access token TTL of 15 minutes.",
+    "expected_doc_ids": ["adr_004"],
+    "expected_entities": ["ADR-004", "JWT_SECRET_KEY"],
+    "category": "Architecture Decision"
+  },
+  {
+    "id": "qa-3",
+    "query": "How should engineers mitigate an unauthorized token verification loop in the API gateway?",
+    "ground_truth_answer": "Flush the local JWKS cache and trigger the /admin/cache/refresh webhook on the API gateway.",
+    "expected_doc_ids": ["auth_runbook"],
+    "expected_entities": ["gateway", "auth-service"],
+    "category": "Operational Runbook"
+  }
+]
