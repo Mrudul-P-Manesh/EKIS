@@ -4,24 +4,21 @@ import { useState, useEffect } from "react";
 import { fetchDebuggerTrace } from "@/lib/api";
 import { RetrievalDebuggerTrace } from "@/lib/types";
 import { 
-  Cpu, 
   Search, 
-  Layers, 
-  Network, 
-  Sparkles, 
-  ListOrdered, 
   Clock, 
-  CheckCircle2, 
-  Zap,
-  ChevronRight,
-  Filter
+  Layers, 
+  Database, 
+  Sparkles, 
+  Network, 
+  FileText,
+  CornerDownLeft
 } from "lucide-react";
 
 export default function RetrievalDebugger() {
   const [query, setQuery] = useState("Why is the authentication service returning 401 errors after deployment?");
   const [loading, setLoading] = useState(false);
   const [trace, setTrace] = useState<RetrievalDebuggerTrace | null>(null);
-  const [activeTab, setActiveTab] = useState<"fused" | "vector" | "bm25" | "graph" | "reranked">("fused");
+  const [activeTab, setActiveTab] = useState<"reranked" | "fused" | "vector" | "bm25" | "graph">("reranked");
 
   const runDebug = async () => {
     if (!query.trim()) return;
@@ -41,216 +38,246 @@ export default function RetrievalDebugger() {
   }, []);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider">
-            <Cpu className="h-4 w-4" />
-            <span>Observability & Pipeline Inspection</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            Multi-Stage Retrieval Debugger
-          </h1>
-          <p className="text-sm text-slate-400">
-            Inspect each stage of the retrieval funnel: Vector search, BM25 keywords, Knowledge Graph hops, RRF fusion, and Cross-Encoder reranking.
-          </p>
-        </div>
+      <div className="space-y-1">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-100">
+          Retrieval Funnel Debugger
+        </h1>
+        <p className="text-xs text-zinc-400">
+          Inspect candidate rankings across Vector search, BM25 keyword matching, Knowledge Graph lookups, RRF fusion, and Cross-Encoder reranking.
+        </p>
       </div>
 
       {/* Query Bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+      <div className="bg-[#111113] border border-zinc-800 rounded-xl p-2.5 shadow-lg">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            runDebug();
+          }}
+          className="flex items-center space-x-2"
+        >
+          <div className="pl-2 text-zinc-500">
+            <Search className="h-4 w-4" />
+          </div>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Enter query to debug retrieval stages..."
-            className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            placeholder="Search query to trace through retrieval pipeline..."
+            className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
           />
-        </div>
-        <button
-          onClick={runDebug}
-          disabled={loading}
-          className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold transition flex items-center justify-center space-x-2 shrink-0 shadow-lg shadow-blue-600/20"
-        >
-          {loading ? (
-            <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-          ) : (
-            <Zap className="h-4 w-4" />
-          )}
-          <span>Trace Pipeline</span>
-        </button>
+          <button
+            type="submit"
+            disabled={loading || !query.trim()}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-900 hover:bg-white text-xs font-semibold disabled:opacity-40 transition"
+          >
+            {loading ? (
+              <span className="flex items-center space-x-1">
+                <span className="animate-spin h-3 w-3 border-2 border-zinc-900 border-t-transparent rounded-full" />
+                <span>Tracing...</span>
+              </span>
+            ) : (
+              <>
+                <span>Trace Funnel</span>
+                <CornerDownLeft className="h-3 w-3 text-zinc-600" />
+              </>
+            )}
+          </button>
+        </form>
       </div>
 
-      {/* Pipeline Summary Bar */}
       {trace && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="glass-panel p-4 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">Intent Classification</span>
-            <span className="text-sm font-bold text-white uppercase tracking-wider">{trace.query_intent}</span>
+        <div className="space-y-6">
+          {/* Latency & Stage Breakdown Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+            <div className="p-2.5 rounded-lg bg-[#111113] border border-zinc-800">
+              <div className="text-zinc-500 text-[10px] uppercase font-mono">Vector Search</div>
+              <div className="text-zinc-200 font-semibold font-mono text-sm">{trace.vector_results.length} Candidates</div>
+            </div>
+            <div className="p-2.5 rounded-lg bg-[#111113] border border-zinc-800">
+              <div className="text-zinc-500 text-[10px] uppercase font-mono">BM25 Keywords</div>
+              <div className="text-zinc-200 font-semibold font-mono text-sm">{trace.bm25_results.length} Candidates</div>
+            </div>
+            <div className="p-2.5 rounded-lg bg-[#111113] border border-zinc-800">
+              <div className="text-zinc-500 text-[10px] uppercase font-mono">Knowledge Graph</div>
+              <div className="text-zinc-200 font-semibold font-mono text-sm">{trace.graph_results.length} Entities</div>
+            </div>
+            <div className="p-2.5 rounded-lg bg-[#111113] border border-zinc-800">
+              <div className="text-zinc-500 text-[10px] uppercase font-mono">RRF Fused</div>
+              <div className="text-zinc-200 font-semibold font-mono text-sm">{trace.fused_results.length} Chunks</div>
+            </div>
+            <div className="p-2.5 rounded-lg bg-[#111113] border border-zinc-800 col-span-2 sm:col-span-1">
+              <div className="text-zinc-500 text-[10px] uppercase font-mono">Total Retrieval</div>
+              <div className="text-emerald-400 font-semibold font-mono text-sm">{trace.total_retrieval_time_ms.toFixed(1)} ms</div>
+            </div>
           </div>
-          <div className="glass-panel p-4 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">Vector Hits</span>
-            <span className="text-base font-bold text-blue-400">{trace.vector_results.length} Chunks</span>
+
+          {/* Segmented Tab Controls */}
+          <div className="flex border-b border-zinc-800 space-x-1">
+            {[
+              { id: "reranked", label: `Reranked (${trace.reranked_results.length})` },
+              { id: "fused", label: `RRF Fusion (${trace.fused_results.length})` },
+              { id: "vector", label: `Vector (${trace.vector_results.length})` },
+              { id: "bm25", label: `BM25 (${trace.bm25_results.length})` },
+              { id: "graph", label: `Graph Entities (${trace.graph_results.length})` },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-3 py-2 text-xs font-medium border-b-2 transition ${
+                  activeTab === tab.id
+                    ? "border-zinc-100 text-zinc-100"
+                    : "border-transparent text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-          <div className="glass-panel p-4 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">Graph Entities</span>
-            <span className="text-base font-bold text-indigo-400">{trace.graph_results.length} Matched</span>
-          </div>
-          <div className="glass-panel p-4 rounded-xl border border-slate-800">
-            <span className="text-xs text-slate-400 block">Retrieval Latency</span>
-            <span className="text-base font-bold text-emerald-400">{trace.total_retrieval_time_ms} ms</span>
+
+          {/* Tab Content */}
+          <div className="space-y-3">
+            {/* Reranked View */}
+            {activeTab === "reranked" && (
+              <div className="space-y-3">
+                {trace.reranked_results.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-zinc-500 bg-[#111113] border border-zinc-800 rounded-xl">
+                    No reranked candidates met the relevance threshold.
+                  </div>
+                ) : (
+                  trace.reranked_results.map((item, idx) => (
+                    <div key={idx} className="bg-[#111113] border border-zinc-800 rounded-xl p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 text-xs font-mono font-semibold border border-zinc-700">
+                            #{idx + 1}
+                          </span>
+                          <span className="text-xs font-medium text-zinc-200">
+                            {item.file_name}
+                          </span>
+                          {item.section_heading && (
+                            <span className="text-xs text-zinc-500 truncate max-w-xs">
+                              {item.section_heading}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[11px] text-zinc-400 font-mono">
+                            Relevance: {(item.score * 100).toFixed(1)}%
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 text-[10px] uppercase font-mono">
+                            {item.source_type}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800/80 text-zinc-300 text-xs font-mono whitespace-pre-wrap leading-relaxed">
+                        {item.content}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* RRF Fused View */}
+            {activeTab === "fused" && (
+              <div className="space-y-3">
+                {trace.fused_results.map((item, idx) => (
+                  <div key={idx} className="bg-[#111113] border border-zinc-800 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 text-xs font-mono font-semibold border border-zinc-700">
+                          Rank #{idx + 1}
+                        </span>
+                        <span className="text-xs font-medium text-zinc-200">
+                          {item.metadata?.file_name || "Document Chunk"}
+                        </span>
+                      </div>
+                      <div className="text-xs text-zinc-400 font-mono">
+                        RRF Score: {item.rrf_score.toFixed(4)}
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800/80 text-zinc-300 text-xs font-mono whitespace-pre-wrap leading-relaxed">
+                      {item.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Vector View */}
+            {activeTab === "vector" && (
+              <div className="space-y-3">
+                {trace.vector_results.map((item, idx) => (
+                  <div key={idx} className="bg-[#111113] border border-zinc-800 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-zinc-200">
+                        {item.metadata?.file_name || "Vector Chunk"}
+                      </span>
+                      <span className="text-xs text-zinc-400 font-mono">
+                        Score: {item.similarity_score.toFixed(4)}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800/80 text-zinc-300 text-xs font-mono whitespace-pre-wrap leading-relaxed">
+                      {item.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* BM25 View */}
+            {activeTab === "bm25" && (
+              <div className="space-y-3">
+                {trace.bm25_results.map((item, idx) => (
+                  <div key={idx} className="bg-[#111113] border border-zinc-800 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-zinc-200">
+                        {item.metadata?.file_name || "BM25 Chunk"}
+                      </span>
+                      <span className="text-xs text-zinc-400 font-mono">
+                        Score: {item.bm25_score.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800/80 text-zinc-300 text-xs font-mono whitespace-pre-wrap leading-relaxed">
+                      {item.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Graph View */}
+            {activeTab === "graph" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {trace.graph_results.length === 0 ? (
+                  <div className="col-span-2 p-6 text-center text-xs text-zinc-500 bg-[#111113] border border-zinc-800 rounded-xl">
+                    No knowledge graph entities matched query terms.
+                  </div>
+                ) : (
+                  trace.graph_results.map((node, idx) => (
+                    <div key={idx} className="bg-[#111113] border border-zinc-800 rounded-xl p-3.5 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-zinc-100">
+                          {node.entity_label || node.entity_id}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 text-[10px] font-mono">
+                          {node.entity_type}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-zinc-400 font-mono">
+                        Related: {node.related_entities.length} connections
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
-
-      {/* Tabs */}
-      <div className="border-b border-slate-800 flex space-x-2 overflow-x-auto">
-        {[
-          { id: "fused", label: "Reciprocal Rank Fusion (RRF)", count: trace?.fused_results.length },
-          { id: "reranked", label: "Cross-Encoder Reranked", count: trace?.reranked_results.length },
-          { id: "vector", label: "Dense Vector (Qdrant)", count: trace?.vector_results.length },
-          { id: "bm25", label: "Keyword (BM25Okapi)", count: trace?.bm25_results.length },
-          { id: "graph", label: "Knowledge Graph (Neo4j)", count: trace?.graph_results.length },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-3 text-xs sm:text-sm font-medium border-b-2 transition whitespace-nowrap flex items-center space-x-2 ${
-              activeTab === tab.id
-                ? "border-blue-500 text-blue-400 bg-blue-500/10 rounded-t-lg"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <span>{tab.label}</span>
-            {tab.count !== undefined && (
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-800 text-xs text-slate-300">
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Active Tab Content */}
-      <div className="space-y-4">
-        {activeTab === "fused" && trace && (
-          <div className="space-y-3">
-            <div className="p-3 rounded-lg bg-blue-950/30 border border-blue-500/20 text-xs text-blue-300">
-              Reciprocal Rank Fusion (RRF) combines scores using formula: <code className="font-mono">RRF_Score = 1 / (60 + Rank)</code> across vector, BM25, and graph channels.
-            </div>
-            <div className="grid gap-3">
-              {trace.fused_results.map((r, i) => (
-                <div key={i} className="glass-panel p-5 rounded-xl border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <span className="px-2.5 py-1 rounded bg-blue-600/20 text-blue-400 text-xs font-bold font-mono">
-                        RRF Rank #{i + 1}
-                      </span>
-                      <span className="text-xs text-slate-300 font-semibold">
-                        {r.metadata?.file_name || r.doc_id}
-                      </span>
-                    </div>
-                    <span className="text-xs font-mono text-emerald-400 font-semibold">
-                      Score: {r.rrf_score.toFixed(4)}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs text-slate-400">
-                    <span>Vector Rank: {r.vector_rank ? `#${r.vector_rank}` : "None"}</span>
-                    <span>•</span>
-                    <span>BM25 Rank: {r.bm25_rank ? `#${r.bm25_rank}` : "None"}</span>
-                    <span>•</span>
-                    <span>Graph Rank: {r.graph_rank ? `#${r.graph_rank}` : "None"}</span>
-                  </div>
-                  <p className="text-xs text-slate-300 font-mono bg-slate-950/60 p-3 rounded-lg border border-slate-900 whitespace-pre-wrap">
-                    {r.content}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "reranked" && trace && (
-          <div className="grid gap-3">
-            {trace.reranked_results.map((r, i) => (
-              <div key={i} className="glass-panel p-5 rounded-xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="px-2.5 py-1 rounded bg-emerald-600/20 text-emerald-400 text-xs font-bold font-mono">
-                      Top #{i + 1}
-                    </span>
-                    <span className="text-xs font-semibold text-white">
-                      {r.file_name}
-                    </span>
-                  </div>
-                  <span className="text-xs font-mono text-blue-400">
-                    Relevance Score: {(r.score * 100).toFixed(1)}%
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300 font-mono bg-slate-950/60 p-3 rounded-lg border border-slate-900 whitespace-pre-wrap">
-                  {r.content}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === "vector" && trace && (
-          <div className="grid gap-3">
-            {trace.vector_results.map((r, i) => (
-              <div key={i} className="glass-panel p-5 rounded-xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-blue-400">Rank #{r.rank}</span>
-                  <span className="text-xs font-mono text-slate-400">Cosine Similarity: {r.similarity_score.toFixed(4)}</span>
-                </div>
-                <p className="text-xs text-slate-300 font-mono bg-slate-950/60 p-3 rounded-lg border border-slate-900 whitespace-pre-wrap">
-                  {r.content}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === "bm25" && trace && (
-          <div className="grid gap-3">
-            {trace.bm25_results.map((r, i) => (
-              <div key={i} className="glass-panel p-5 rounded-xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-400">BM25 Rank #{r.rank}</span>
-                  <span className="text-xs font-mono text-slate-400">Score: {r.bm25_score.toFixed(3)}</span>
-                </div>
-                <p className="text-xs text-slate-300 font-mono bg-slate-950/60 p-3 rounded-lg border border-slate-900 whitespace-pre-wrap">
-                  {r.content}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === "graph" && trace && (
-          <div className="grid gap-3">
-            {trace.graph_results.map((g, i) => (
-              <div key={i} className="glass-panel p-5 rounded-xl border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 text-xs font-semibold">
-                      {g.entity_type}
-                    </span>
-                    <span className="text-sm font-bold text-white">{g.entity_label}</span>
-                  </div>
-                  <span className="text-xs text-slate-400">Match Score: {g.relevance_score}</span>
-                </div>
-                <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-indigo-300 font-mono">
-                  {g.relationship_path}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

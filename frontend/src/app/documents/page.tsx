@@ -4,17 +4,12 @@ import { useState, useEffect } from "react";
 import { fetchDocuments, uploadDocument } from "@/lib/api";
 import { DocumentItem } from "@/lib/types";
 import { 
-  Files, 
   Upload, 
-  FileText, 
-  Code, 
-  FileCheck, 
-  Trash2, 
   RefreshCw, 
-  Tag, 
-  Clock, 
-  CheckCircle2,
-  AlertCircle
+  FileText, 
+  CheckCircle2, 
+  AlertCircle,
+  FileCode
 } from "lucide-react";
 
 export default function DocumentsPage() {
@@ -57,10 +52,10 @@ export default function DocumentsPage() {
 
     try {
       const res = await uploadDocument(formData);
-      setUploadSuccess(`Successfully ingested '${file.name}' (${res.chunks_count} chunks, ${res.entities_extracted} entities extracted).`);
+      setUploadSuccess(`Ingested '${file.name}' (${res.chunks_count} chunks, ${res.entities_extracted} entities extracted).`);
       loadDocs();
     } catch (err: any) {
-      setUploadError(err.message || "Failed to upload and ingest document.");
+      setUploadError(err.message || "Failed to upload document.");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -68,145 +63,135 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider">
-            <Files className="h-4 w-4" />
-            <span>Ingestion & Repository Management</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            Knowledge Documents & Code Repositories
+        <div className="space-y-1">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-100">
+            Document Ingestion & Knowledge Index
           </h1>
-          <p className="text-sm text-slate-400">
-            Upload PDFs, Markdown ADRs, Runbooks, Python/TypeScript files, and configurations to index them into Qdrant, BM25, and Neo4j.
+          <p className="text-xs text-zinc-400">
+            Manage indexed architectural records, incident postmortems, operational runbooks, and source code.
           </p>
         </div>
 
         <button
           onClick={loadDocs}
           disabled={loading}
-          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition flex items-center space-x-2 shrink-0 border border-slate-700"
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-xs text-zinc-300 hover:text-zinc-100 font-medium transition self-start sm:self-auto"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-          <span>Refresh List</span>
+          <span>Refresh Index</span>
         </button>
       </div>
 
       {/* Upload Box */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-4">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
-          <Upload className="h-4 w-4 text-blue-400" />
-          <span>Ingest New Engineering Source</span>
+      <div className="bg-[#111113] border border-zinc-800 rounded-xl p-5 space-y-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          Ingest New Engineering Document
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-          <div className="sm:col-span-1">
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">
-              Service / Domain Tag (Optional)
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-1 space-y-1">
+            <label className="text-[11px] font-medium text-zinc-400">
+              Associated Service (Optional)
             </label>
             <input
               type="text"
               value={serviceName}
               onChange={(e) => setServiceName(e.target.value)}
-              placeholder="e.g. auth-service, gateway"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              placeholder="e.g. auth-service"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
             />
           </div>
 
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">
-              Choose File (PDF, Markdown, TXT, Python, YAML)
+          <div className="sm:col-span-2 space-y-1">
+            <label className="text-[11px] font-medium text-zinc-400">
+              Select Document File (.md, .pdf, .py, .yaml)
             </label>
-            <label className="flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-900 border border-dashed border-slate-700 hover:border-blue-500 text-slate-300 text-xs font-medium cursor-pointer transition">
-              <Upload className="h-4 w-4 mr-2 text-blue-400" />
-              <span>{uploading ? "Ingesting & Extracting Knowledge..." : "Select File to Upload & Index"}</span>
+            <label className="flex items-center justify-center space-x-2 w-full px-4 py-2 border border-dashed border-zinc-700 hover:border-zinc-500 rounded-lg cursor-pointer bg-zinc-950 hover:bg-zinc-900 transition">
+              <Upload className="h-4 w-4 text-zinc-400" />
+              <span className="text-xs text-zinc-300">
+                {uploading ? "Ingesting & indexing..." : "Choose a file to ingest"}
+              </span>
               <input
                 type="file"
                 onChange={handleFileUpload}
                 disabled={uploading}
-                accept=".pdf,.md,.markdown,.txt,.py,.ts,.js,.yaml,.yml,.json"
                 className="hidden"
+                accept=".md,.txt,.pdf,.py,.ts,.js,.yaml,.yml,.json"
               />
             </label>
           </div>
         </div>
 
         {uploadSuccess && (
-          <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-center space-x-2">
+          <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-900 text-emerald-300 text-xs flex items-center space-x-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
             <span>{uploadSuccess}</span>
           </div>
         )}
 
         {uploadError && (
-          <div className="p-3 rounded-lg bg-red-950/40 border border-red-500/30 text-red-300 text-xs flex items-center space-x-2">
+          <div className="p-3 rounded-lg bg-red-950/40 border border-red-900 text-red-300 text-xs flex items-center space-x-2">
             <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
             <span>{uploadError}</span>
           </div>
         )}
       </div>
 
-      {/* Indexed Documents Table */}
-      <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-            Indexed Documents & Knowledge Sources ({docs.length})
-          </h3>
+      {/* Documents Table */}
+      <div className="bg-[#111113] border border-zinc-800 rounded-xl overflow-hidden shadow-lg">
+        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            Indexed Engineering Corpus ({docs.length})
+          </h2>
         </div>
 
-        <div className="divide-y divide-slate-800/80">
-          {docs.length > 0 ? (
-            docs.map((doc) => (
-              <div
-                key={doc.doc_id}
-                className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-900/40 transition"
-              >
-                <div className="flex items-start space-x-3.5">
-                  <div className="p-2.5 rounded-xl bg-slate-800 text-blue-400 shrink-0 mt-0.5">
-                    {doc.source_type === "code" ? (
-                      <Code className="h-5 w-5" />
-                    ) : (
-                      <FileText className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">{doc.title}</h4>
-                    <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-400">
-                      <span className="font-mono text-slate-300">{doc.file_name}</span>
-                      <span>•</span>
-                      <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                        {doc.source_type.toUpperCase()}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-zinc-900/60 text-zinc-400 uppercase font-mono text-[10px] border-b border-zinc-800">
+              <tr>
+                <th className="px-4 py-3">Document Title</th>
+                <th className="px-4 py-3">File Name</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Service</th>
+                <th className="px-4 py-3">Ingested Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+              {docs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                    No indexed documents found in database.
+                  </td>
+                </tr>
+              ) : (
+                docs.map((doc) => (
+                  <tr key={doc.doc_id} className="hover:bg-zinc-900/40 transition">
+                    <td className="px-4 py-3 font-medium text-zinc-100 flex items-center space-x-2">
+                      <FileText className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                      <span className="truncate max-w-sm">{doc.title}</span>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-zinc-400">
+                      {doc.file_name}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 text-[10px] uppercase font-mono">
+                        {doc.source_type}
                       </span>
-                      {doc.service_name && (
-                        <>
-                          <span>•</span>
-                          <span className="px-2 py-0.5 rounded-full bg-indigo-950/60 text-indigo-300 border border-indigo-500/30">
-                            {doc.service_name}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 text-xs text-slate-500">
-                  <span className="flex items-center space-x-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{new Date(doc.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </span>
-                  <span className="px-2 py-1 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 font-medium">
-                    Indexed
-                  </span>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="p-8 text-center text-xs text-slate-500">
-              No documents indexed yet. Upload a document or restart backend to seed sample architecture docs.
-            </div>
-          )}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-zinc-400">
+                      {doc.service_name || "-"}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-zinc-500 text-[11px]">
+                      {doc.created_at.slice(0, 10)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

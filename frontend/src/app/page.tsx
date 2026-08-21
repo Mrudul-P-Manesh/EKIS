@@ -6,38 +6,41 @@ import { AnswerResponse, Citation } from "@/lib/types";
 import { CitationModal } from "@/components/CitationModal";
 import { 
   Search, 
-  Sparkles, 
-  ShieldCheck, 
-  ShieldAlert, 
-  AlertCircle, 
+  ArrowRight, 
   CheckCircle2, 
-  Layers, 
-  Network, 
-  Sliders, 
+  ShieldAlert, 
+  SlidersHorizontal,
+  Sparkles, 
   Clock, 
-  ExternalLink,
-  ChevronRight,
-  BookOpen
+  Tag, 
+  Layers, 
+  FileText,
+  AlertTriangle,
+  Server,
+  CornerDownLeft,
+  ChevronDown
 } from "lucide-react";
 
-export default function QueryConsole() {
+export default function QueryConsolePage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<AnswerResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
 
-  // Advanced toggles
+  // Search options
+  const [showOptions, setShowOptions] = useState(false);
   const [useVector, setUseVector] = useState(true);
-  const [useBM25, setUseBM25] = useState(true);
+  const [useBm25, setUseBm25] = useState(true);
   const [useGraph, setUseGraph] = useState(true);
   const [useReranker, setUseReranker] = useState(true);
-  const [showOptions, setShowOptions] = useState(false);
+  const [topK, setTopK] = useState(5);
 
   const sampleQueries = [
     "Why is the authentication service returning 401 errors after deployment?",
     "What is the token expiration TTL and key rotation policy specified in ADR-004?",
-    "How should engineers mitigate an unauthorized token verification loop in the API gateway?",
+    "What caused incident INC-401 and how was it mitigated?",
+    "Who is the CEO of Tesla?"
   ];
 
   const handleSearch = async (queryText?: string) => {
@@ -46,301 +49,337 @@ export default function QueryConsole() {
 
     setLoading(true);
     setError(null);
+
     try {
       const res = await submitQuery(q, {
         use_vector: useVector,
-        use_bm25: useBM25,
+        use_bm25: useBm25,
         use_graph: useGraph,
         use_reranker: useReranker,
-        top_k: 5,
+        top_k: topK,
       });
       setResponse(res);
     } catch (err: any) {
-      setError(err.message || "Failed to retrieve grounded answer.");
+      setError(err.message || "Failed to fetch response from backend.");
     } finally {
       setLoading(false);
     }
   };
 
-  const getConfidenceBadge = (level: string) => {
-    switch (level) {
-      case "HIGH":
-        return {
-          bg: "bg-emerald-950/60 border-emerald-500/40 text-emerald-400",
-          icon: ShieldCheck,
-          label: "High Confidence Grounded",
-        };
-      case "MEDIUM":
-        return {
-          bg: "bg-blue-950/60 border-blue-500/40 text-blue-400",
-          icon: CheckCircle2,
-          label: "Medium Confidence",
-        };
-      case "LOW":
-        return {
-          bg: "bg-amber-950/60 border-amber-500/40 text-amber-400",
-          icon: AlertCircle,
-          label: "Low Confidence - Partial Evidence",
-        };
-      default:
-        return {
-          bg: "bg-red-950/60 border-red-500/40 text-red-400",
-          icon: ShieldAlert,
-          label: "Unreliable - Evidence Insufficient",
-        };
+  const getConfidenceBadge = (confidence?: AnswerResponse["confidence"]) => {
+    if (!confidence) return null;
+    const scorePct = (confidence.score * 100).toFixed(0);
+
+    if (confidence.level === "HIGH") {
+      return (
+        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-950/70 text-emerald-400 border border-emerald-800/80">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span>High Confidence ({scorePct}%)</span>
+        </span>
+      );
+    } else if (confidence.level === "MEDIUM") {
+      return (
+        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-950/70 text-amber-400 border border-amber-800/80">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+          <span>Medium Confidence ({scorePct}%)</span>
+        </span>
+      );
+    } else {
+      return (
+        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-950/70 text-red-400 border border-red-800/80">
+          <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+          <span>Insufficient Evidence (0%)</span>
+        </span>
+      );
     }
   };
 
+  const renderTextWithCitations = (text: string) => {
+    if (!text) return null;
+    const parts = text.split(/(\[SOURCE-\d+\])/g);
+
+    return parts.map((part, idx) => {
+      const match = part.match(/\[SOURCE-(\d+)\]/);
+      if (match) {
+        const citId = parseInt(match[1], 10);
+        const citObj = response?.citations.find((c) => c.citation_id === citId);
+
+        return (
+          <button
+            key={idx}
+            onClick={() => citObj && setSelectedCitation(citObj)}
+            className="inline-flex items-center mx-1 px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-mono text-[11px] font-medium border border-zinc-700 transition"
+            title={citObj ? `${citObj.file_name} - ${citObj.section_heading || ""}` : "Source Citation"}
+          >
+            {part}
+          </button>
+        );
+      }
+      return <span key={idx}>{part}</span>;
+    });
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Header Banner */}
-      <div className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-950/50 border border-blue-500/30 text-blue-400 text-xs font-semibold uppercase tracking-wider">
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Grounded Engineering Intelligence</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-          Ask Your Engineering Knowledge Base
+    <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      {/* Header */}
+      <div className="space-y-1 text-center sm:text-left">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-100">
+          Engineering Knowledge Search
         </h1>
-        <p className="text-sm sm:text-base text-slate-400">
-          Synthesizes verified technical insights from microservice documentation, Architecture Decision Records (ADRs), code repositories, and operational postmortems.
+        <p className="text-xs text-zinc-400">
+          Grounded semantic intelligence across microservice docs, ADRs, runbooks, and source code.
         </p>
       </div>
 
-      {/* Query Bar */}
-      <div className="max-w-3xl mx-auto">
+      {/* Search Input Box */}
+      <div className="bg-[#111113] border border-zinc-800 rounded-xl p-2.5 shadow-lg focus-within:border-zinc-600 transition">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSearch();
           }}
-          className="relative flex items-center"
+          className="flex items-center space-x-2"
         >
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g. Why is the authentication service returning 401 errors after deployment?"
-              className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 shadow-xl transition"
-            />
+          <div className="pl-2 text-zinc-500">
+            <Search className="h-4 w-4" />
           </div>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ask a technical architecture or incident question..."
+            className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => setShowOptions(!showOptions)}
+            className={`p-1.5 rounded-lg border text-xs transition ${
+              showOptions 
+                ? "bg-zinc-800 border-zinc-600 text-zinc-200" 
+                : "border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+            }`}
+            title="Retrieval Options"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+          </button>
           <button
             type="submit"
             disabled={loading || !query.trim()}
-            className="ml-3 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-sm sm:text-base shadow-lg shadow-blue-600/30 transition flex items-center space-x-2 shrink-0"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-900 hover:bg-white text-xs font-semibold disabled:opacity-40 disabled:hover:bg-zinc-100 transition shadow-sm"
           >
             {loading ? (
-              <span className="flex items-center space-x-2">
-                <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                <span>Synthesizing...</span>
+              <span className="flex items-center space-x-1">
+                <span className="animate-spin h-3 w-3 border-2 border-zinc-900 border-t-transparent rounded-full" />
+                <span>Searching...</span>
               </span>
             ) : (
-              <span>Ask EKIS</span>
+              <>
+                <span>Search</span>
+                <CornerDownLeft className="h-3 w-3 text-zinc-600" />
+              </>
             )}
           </button>
         </form>
 
-        {/* Quick Question Chips */}
-        <div className="mt-3 flex items-center justify-between text-xs">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-slate-400 font-medium">Try:</span>
-            {sampleQueries.map((q, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  setQuery(q);
-                  handleSearch(q);
-                }}
-                className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-slate-700/60 transition truncate max-w-xs"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowOptions(!showOptions)}
-            className="flex items-center space-x-1 text-slate-400 hover:text-blue-400 transition"
-          >
-            <Sliders className="h-3.5 w-3.5" />
-            <span>Options</span>
-          </button>
-        </div>
-
-        {/* Advanced Retrieval Controls */}
+        {/* Options Tray */}
         {showOptions && (
-          <div className="mt-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-wrap gap-4 text-xs">
-            <label className="flex items-center space-x-2 cursor-pointer text-slate-300">
-              <input
-                type="checkbox"
-                checked={useVector}
-                onChange={(e) => setUseVector(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500"
-              />
-              <span>Vector Search (Qdrant)</span>
-            </label>
-            <label className="flex items-center space-x-2 cursor-pointer text-slate-300">
-              <input
-                type="checkbox"
-                checked={useBM25}
-                onChange={(e) => setUseBM25(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500"
-              />
-              <span>BM25 Keywords</span>
-            </label>
-            <label className="flex items-center space-x-2 cursor-pointer text-slate-300">
-              <input
-                type="checkbox"
-                checked={useGraph}
-                onChange={(e) => setUseGraph(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500"
-              />
-              <span>Knowledge Graph (Neo4j)</span>
-            </label>
-            <label className="flex items-center space-x-2 cursor-pointer text-slate-300">
-              <input
-                type="checkbox"
-                checked={useReranker}
-                onChange={(e) => setUseReranker(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500"
-              />
-              <span>Cross-Encoder Reranker</span>
-            </label>
+          <div className="mt-3 pt-3 border-t border-zinc-800/80 px-2 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-300">
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center space-x-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useVector}
+                  onChange={(e) => setUseVector(e.target.checked)}
+                  className="rounded bg-zinc-900 border-zinc-700 text-zinc-100 focus:ring-0"
+                />
+                <span>Vector Search</span>
+              </label>
+              <label className="flex items-center space-x-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useBm25}
+                  onChange={(e) => setUseBm25(e.target.checked)}
+                  className="rounded bg-zinc-900 border-zinc-700 text-zinc-100 focus:ring-0"
+                />
+                <span>BM25 Keywords</span>
+              </label>
+              <label className="flex items-center space-x-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useGraph}
+                  onChange={(e) => setUseGraph(e.target.checked)}
+                  className="rounded bg-zinc-900 border-zinc-700 text-zinc-100 focus:ring-0"
+                />
+                <span>Neo4j Graph</span>
+              </label>
+              <label className="flex items-center space-x-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useReranker}
+                  onChange={(e) => setUseReranker(e.target.checked)}
+                  className="rounded bg-zinc-900 border-zinc-700 text-zinc-100 focus:ring-0"
+                />
+                <span>Reranker</span>
+              </label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-zinc-500">Top-K:</span>
+              <select
+                value={topK}
+                onChange={(e) => setTopK(Number(e.target.value))}
+                className="bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5 text-xs text-zinc-200"
+              >
+                <option value={3}>3</option>
+                <option value={5}>5</option>
+                <option value={8}>8</option>
+              </select>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Error state */}
+      {/* Suggestion Prompts */}
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
+          Suggested queries
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {sampleQueries.map((sq, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setQuery(sq);
+                handleSearch(sq);
+              }}
+              className="text-left px-2.5 py-1 rounded-md bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-xs text-zinc-300 hover:text-zinc-100 transition"
+            >
+              {sq}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Error Message */}
       {error && (
-        <div className="max-w-3xl mx-auto p-4 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-sm flex items-center space-x-3">
-          <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
+        <div className="p-3 rounded-lg bg-red-950/40 border border-red-900/80 text-red-300 text-xs flex items-center space-x-2">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0 text-red-400" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Grounded Response View */}
+      {/* Result Section */}
       {response && (
-        <div className="max-w-4xl mx-auto space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-          {/* Main Answer Card */}
-          <div className="glass-panel p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-700/80 space-y-6">
-            {/* Confidence & Latency Header */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
-              {(() => {
-                const conf = getConfidenceBadge(response.confidence.level);
-                const Icon = conf.icon;
-                return (
-                  <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full border text-xs font-semibold ${conf.bg}`}>
-                    <Icon className="h-4 w-4" />
-                    <span>{conf.label} ({(response.confidence.score * 100).toFixed(0)}%)</span>
-                  </div>
-                );
-              })()}
-
-              <div className="flex items-center space-x-4 text-xs text-slate-400">
-                <span className="flex items-center space-x-1">
-                  <Clock className="h-3.5 w-3.5 text-slate-500" />
-                  <span>{response.latency_ms} ms</span>
-                </span>
-                <span className="flex items-center space-x-1">
-                  <BookOpen className="h-3.5 w-3.5 text-slate-500" />
-                  <span>{response.citations.length} Grounded Citations</span>
-                </span>
-              </div>
+        <div className="space-y-4 pt-2 animate-in fade-in duration-200">
+          {/* Metadata bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+            <div className="flex items-center space-x-2">
+              {getConfidenceBadge(response.confidence)}
+              <span className="text-xs text-zinc-500 font-mono">
+                {response.latency_ms} ms
+              </span>
             </div>
-
-            {/* Direct Answer */}
-            <div className="space-y-2">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-blue-400">
-                Direct Resolution
-              </h2>
-              <p className="text-base sm:text-lg text-white font-medium leading-relaxed">
-                {response.direct_answer}
-              </p>
-            </div>
-
-            {/* Detailed Technical Explanation */}
-            <div className="space-y-2 pt-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Architecture Breakdown & Analysis
-              </h3>
-              <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap space-y-2">
-                {response.detailed_explanation}
-              </div>
-            </div>
-
-            {/* Evidence Summary */}
-            {response.evidence_summary && (
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5 text-xs text-slate-300">
-                <span className="font-bold text-slate-400 uppercase tracking-wider">Evidence Summary:</span>
-                <p>{response.evidence_summary}</p>
-              </div>
-            )}
-
-            {/* Citations Row */}
-            {response.citations.length > 0 && (
-              <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Verified Source Citations
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {response.citations.map((c) => (
-                    <button
-                      key={c.citation_id}
-                      onClick={() => setSelectedCitation(c)}
-                      className="text-left p-3 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-blue-500/40 transition flex items-start space-x-3 group"
-                    >
-                      <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-mono text-xs font-bold shrink-0">
-                        {c.source_tag}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-white truncate group-hover:text-blue-300 transition">
-                          {c.file_name}
-                        </p>
-                        <p className="text-[11px] text-slate-400 truncate">
-                          {c.section_heading || c.source_type}
-                        </p>
-                      </div>
-                      <ExternalLink className="h-3.5 w-3.5 text-slate-500 group-hover:text-blue-400 shrink-0 transition" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Related Services & Graph Entities */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-800/80 text-xs">
-              {response.related_services.length > 0 && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-slate-400">Services:</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {response.related_services.map((srv, idx) => (
-                      <span key={idx} className="px-2 py-0.5 rounded bg-indigo-950/60 text-indigo-300 border border-indigo-500/30">
-                        {srv}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {response.related_entities.length > 0 && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-slate-400">Entities:</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {response.related_entities.map((ent, idx) => (
-                      <span key={idx} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                        {ent}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="text-xs text-zinc-400 font-mono">
+              {response.citations.length} Citations
             </div>
           </div>
+
+          {/* Direct Resolution Panel */}
+          <div className="bg-[#111113] border border-zinc-800 rounded-xl p-5 space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+              Resolution
+            </h2>
+            <div className="text-sm text-zinc-100 leading-relaxed font-medium">
+              {renderTextWithCitations(response.direct_answer)}
+            </div>
+          </div>
+
+          {/* Detailed Breakdown */}
+          {response.detailed_explanation && (
+            <div className="bg-[#111113] border border-zinc-800 rounded-xl p-5 space-y-2">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                Detailed Analysis
+              </h2>
+              <div className="text-xs text-zinc-300 leading-relaxed space-y-2">
+                {renderTextWithCitations(response.detailed_explanation)}
+              </div>
+            </div>
+          )}
+
+          {/* Evidence Summary & Tags */}
+          {(response.evidence_summary || response.related_services.length > 0) && (
+            <div className="bg-[#111113] border border-zinc-800 rounded-xl p-4 space-y-3">
+              {response.evidence_summary && (
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                    Evidence Synthesis
+                  </span>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    {renderTextWithCitations(response.evidence_summary)}
+                  </p>
+                </div>
+              )}
+
+              {(response.related_services.length > 0 || response.related_entities.length > 0) && (
+                <div className="flex flex-wrap gap-1.5 pt-2 border-t border-zinc-800/80">
+                  {response.related_services.map((svc, i) => (
+                    <span
+                      key={i}
+                      className="px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-zinc-800 text-[11px] font-mono"
+                    >
+                      svc:{svc}
+                    </span>
+                  ))}
+                  {response.related_entities.map((ent, i) => (
+                    <span
+                      key={i}
+                      className="px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 text-[11px] font-mono"
+                    >
+                      ent:{ent}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Verified Source Citations */}
+          {response.citations.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 px-1">
+                Verified Citations
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {response.citations.map((cit) => (
+                  <div
+                    key={cit.citation_id}
+                    onClick={() => setSelectedCitation(cit)}
+                    className="p-3 rounded-lg bg-[#111113] border border-zinc-800 hover:border-zinc-600 cursor-pointer transition space-y-1.5 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-200 font-mono text-[11px] font-semibold border border-zinc-700">
+                        {cit.source_tag}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 uppercase font-mono">
+                        {cit.source_type}
+                      </span>
+                    </div>
+                    <div className="text-xs font-medium text-zinc-200 truncate group-hover:text-white transition">
+                      {cit.file_name}
+                    </div>
+                    {cit.section_heading && (
+                      <div className="text-[11px] text-zinc-500 truncate">
+                        {cit.section_heading}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Citation Details Modal */}
+      {/* Citation Modal */}
       <CitationModal
         citation={selectedCitation}
         onClose={() => setSelectedCitation(null)}
