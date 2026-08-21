@@ -202,7 +202,14 @@ export const GradientWaves = ({
     canvas.style.width = "100%";
     canvas.style.height = "100%";
     canvas.style.display = "block";
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
     container.appendChild(canvas);
+
+    const h = hexToRgb(horizonColor);
+    const w = hexToRgb(waveColor);
+    const cr = hexToRgb(crestColor);
 
     const geometry = new Triangle(gl);
     const program = new Program(gl, {
@@ -211,27 +218,27 @@ export const GradientWaves = ({
       uniforms: {
         iTime: { value: 0 },
         iResolution: { value: new Float32Array([1, 1]) },
-        uSpeed: { value: 0.4 },
-        uAmplitude: { value: 2.5 },
-        uWaveScale: { value: 0.6 },
-        uWaveRatio: { value: 0.9 },
-        uSwell: { value: 35 },
-        uTurbulence: { value: 20 },
-        uTilt: { value: 1.11 },
-        uZoom: { value: 1.0 },
-        uHeight: { value: 5.5 },
-        uFogDepth: { value: 15 },
-        uSteps: { value: 70.0 },
-        uBrightness: { value: 1.0 },
-        uOpacity: { value: 1.0 },
-        uGrain: { value: 1.0 },
-        uGrainIntensity: { value: 0.05 },
+        uSpeed: { value: speed },
+        uAmplitude: { value: amplitude },
+        uWaveScale: { value: waveScale },
+        uWaveRatio: { value: waveRatio },
+        uSwell: { value: swell },
+        uTurbulence: { value: turbulence },
+        uTilt: { value: tilt },
+        uZoom: { value: zoom },
+        uHeight: { value: height },
+        uFogDepth: { value: fogDepth },
+        uSteps: { value: detailToSteps(detail) },
+        uBrightness: { value: brightness },
+        uOpacity: { value: opacity },
+        uGrain: { value: grain ? 1.0 : 0.0 },
+        uGrainIntensity: { value: grainIntensity },
         uMouse: { value: new Float32Array([0.5, 0.5]) },
-        uParallax: { value: 0.5 },
-        uEnableMouse: { value: true },
-        uHorizonColor: { value: new Float32Array([1, 1, 1]) },
-        uWaveColor: { value: new Float32Array([1, 1, 1]) },
-        uCrestColor: { value: new Float32Array([1, 1, 1]) },
+        uParallax: { value: parallaxStrength },
+        uEnableMouse: { value: mouseInteraction },
+        uHorizonColor: { value: new Float32Array(h) },
+        uWaveColor: { value: new Float32Array(w) },
+        uCrestColor: { value: new Float32Array(cr) },
       },
     });
 
@@ -240,9 +247,9 @@ export const GradientWaves = ({
 
     const setSize = () => {
       const rect = container.getBoundingClientRect();
-      const w = Math.max(1, Math.floor(rect.width));
-      const h = Math.max(1, Math.floor(rect.height));
-      renderer.setSize(w, h);
+      const width = Math.max(1, Math.floor(rect.width));
+      const height = Math.max(1, Math.floor(rect.height));
+      renderer.setSize(width, height);
       const res = program.uniforms.iResolution.value;
       res[0] = gl.drawingBufferWidth;
       res[1] = gl.drawingBufferHeight;
@@ -265,8 +272,8 @@ export const GradientWaves = ({
       targetMouse[0] = 0.5;
       targetMouse[1] = 0.5;
     };
-    canvas.addEventListener("pointermove", onPointerMove as any);
-    canvas.addEventListener("pointerleave", onPointerLeave as any);
+    window.addEventListener("pointermove", onPointerMove as any);
+    window.addEventListener("pointerleave", onPointerLeave as any);
 
     let raf = 0;
     let isVisible = true;
@@ -317,8 +324,8 @@ export const GradientWaves = ({
       ro.disconnect();
       io.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
-      canvas.removeEventListener("pointermove", onPointerMove as any);
-      canvas.removeEventListener("pointerleave", onPointerLeave as any);
+      window.removeEventListener("pointermove", onPointerMove as any);
+      window.removeEventListener("pointerleave", onPointerLeave as any);
       ctxMap.delete(container);
       try {
         container.removeChild(canvas);

@@ -164,35 +164,36 @@ export default function QueryConsolePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Ambient Gradient Wave Hero Backdrop */}
-      <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-zinc-800/80 shadow-2xl bg-zinc-950">
+      <div className="relative w-full h-72 sm:h-80 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl bg-zinc-950">
         <GradientWaves
-          horizonColor="#09090b"
-          waveColor="#1e1b4b"
-          crestColor="#3b82f6"
-          speed={0.25}
-          amplitude={1.8}
-          waveScale={0.5}
-          waveRatio={0.85}
-          swell={25}
-          turbulence={15}
-          tilt={1.15}
-          zoom={1.1}
-          height={5.0}
-          fogDepth={16}
+          horizonColor="#5227FF"
+          waveColor="#FF9FFC"
+          crestColor="#FFFFFF"
+          speed={0.4}
+          amplitude={2.5}
+          waveScale={0.6}
+          waveRatio={0.9}
+          swell={35}
+          turbulence={20}
+          tilt={1.11}
+          zoom={1.0}
+          height={5.5}
+          fogDepth={15}
           detail="medium"
-          brightness={1.1}
-          opacity={0.65}
+          brightness={1.0}
+          opacity={1.0}
           mouseInteraction={true}
-          parallaxStrength={0.4}
+          parallaxStrength={0.5}
           grain={true}
-          grainIntensity={0.04}
+          grainIntensity={0.05}
+          className="absolute inset-0 w-full h-full"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent to-transparent pointer-events-none" />
-        <div className="absolute inset-0 flex flex-col justify-end p-5 pointer-events-none">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 flex items-center space-x-2">
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 flex flex-col justify-end p-6 pointer-events-none">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center space-x-2 drop-shadow-md">
             <span>Engineering Intelligence Console</span>
           </h1>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs sm:text-sm text-zinc-200/90 font-medium drop-shadow">
             Grounded multi-modal RAG across microservice architecture, ADRs, postmortems, and code.
           </p>
         </div>
