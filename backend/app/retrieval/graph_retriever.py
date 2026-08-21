@@ -1,3 +1,4 @@
+import re
 from typing import List, Dict, Any, Optional, Set, Tuple
 from collections import defaultdict, deque
 from backend.app.config import settings
@@ -22,6 +23,7 @@ class KnowledgeGraphRetriever:
         self._in_memory_edges: List[GraphEdge] = []
         self._adj_list: Dict[str, List[Tuple[str, GraphEdge]]] = defaultdict(list)
         self._init_neo4j()
+        self._sync_from_neo4j()
 
     def _init_neo4j(self):
         if NEO4J_AVAILABLE and not settings.USE_IN_MEMORY_GRAPH:
@@ -37,6 +39,41 @@ class KnowledgeGraphRetriever:
                 self.driver = None
         else:
             logger.info("Using in-memory Knowledge Graph engine.")
+
+    def _sync_from_neo4j(self):
+        """Populate local cache from Neo4j if connected."""
+        if not self.driver:
+            return
+        try:
+            with self.driver.session() as session:
+                result_nodes = session.run("MATCH (n:Entity) RETURN n.id AS id, n.label AS label, n.entity_type AS entity_type, n.doc_id AS doc_id, n.chunk_id AS chunk_id")
+                for record in result_nodes:
+                    node_id = record["id"]
+                    node = GraphNode(
+                        id=node_id,
+                        label=record["label"] or node_id,
+                        entity_type=record["entity_type"] or "default",
+                        doc_id=record["doc_id"],
+                        chunk_id=record["chunk_id"],
+                        properties={}
+                    )
+                    self._in_memory_nodes[node_id] = node
+
+                result_edges = session.run("MATCH (a:Entity)-[r:RELATION]->(b:Entity) RETURN a.id AS source, b.id AS target, r.relation AS relation, r.weight AS weight")
+                for record in result_edges:
+                    edge = GraphEdge(
+                        id=f"{record['source']}->{record['target']}",
+                        source=record["source"],
+                        target=record["target"],
+                        relation=record["relation"] or "RELATED_TO",
+                        properties={},
+                        weight=float(record["weight"] or 1.0)
+                    )
+                    self._in_memory_edges.append(edge)
+                    self._adj_list[edge.source].append((edge.target, edge))
+                    self._adj_list[edge.target].append((edge.source, edge))
+        except Exception as e:
+            logger.warning(f"Failed to sync from Neo4j: {e}")
 
     def add_subgraph(self, subgraph: GraphSubgraph):
         """Add nodes and edges to knowledge graph."""
@@ -83,17 +120,22 @@ class KnowledgeGraphRetriever:
 
     def search_entities(self, query: str, top_k: int = 5) -> List[GraphSearchResult]:
         """Find relevant entities and their relational neighborhoods."""
+        if self.driver and not self._in_memory_nodes:
+            self._sync_from_neo4j()
+
         query_lower = query.lower()
         matched_nodes = []
 
-        # Find direct entity matches in query
+        query_tokens = [t for t in re.findall(r"[a-z0-9_\-]+", query_lower) if len(t) > 1]
         for node_id, node in self._in_memory_nodes.items():
             score = 0.0
             node_label_lower = node.label.lower()
 
-            if node_label_lower in query_lower:
+            if node_label_lower in query_lower or query_lower in node_label_lower:
                 score += 2.0
-            elif any(token in query_lower for token in node_label_lower.split()):
+            elif any(token in node_label_lower for token in query_tokens):
+                score += 1.5
+            elif any(token in query_lower for token in re.findall(r"[a-z0-9_\-]+", node_label_lower)):
                 score += 1.0
 
             # Match properties (e.g. error codes, service names)
@@ -161,7 +203,10 @@ class KnowledgeGraphRetriever:
         return neighbors
 
     def get_full_graph(self) -> GraphSubgraph:
-        """Return the complete in-memory knowledge graph."""
+        """Return the complete knowledge graph."""
+        if self.driver and not self._in_memory_nodes:
+            self._sync_from_neo4j()
+
         return GraphSubgraph(
             nodes=list(self._in_memory_nodes.values()),
             edges=self._in_memory_edges

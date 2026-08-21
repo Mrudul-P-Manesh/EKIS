@@ -8,14 +8,16 @@ from backend.app.config import settings
 from backend.app.api.router import api_router
 from backend.app.ingestion.pipeline import ingestion_pipeline
 from backend.app.core.database import metadata_db
+from backend.app.retrieval.graph_retriever import graph_retriever
 from backend.app.core.logging import logger
 
 
 def load_initial_sample_data():
-    """Seed sample engineering documents if database is empty."""
+    """Seed sample engineering documents if database or graph is empty."""
+    current_graph = graph_retriever.get_full_graph()
     existing_docs = metadata_db.list_documents()
-    if existing_docs:
-        logger.info(f"Database already contains {len(existing_docs)} documents. Skipping seed.")
+    if existing_docs and len(current_graph.nodes) > 0:
+        logger.info(f"Database already contains {len(existing_docs)} documents and {len(current_graph.nodes)} graph nodes. Skipping seed.")
         return
 
     sample_docs_dir = os.path.join(os.path.dirname(__file__), "..", "sample_data", "docs")
