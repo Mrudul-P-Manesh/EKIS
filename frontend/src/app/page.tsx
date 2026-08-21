@@ -163,44 +163,18 @@ export default function QueryConsolePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Ambient Gradient Wave Hero Backdrop */}
-      <div className="relative w-full h-72 sm:h-80 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl bg-zinc-950">
-        <GradientWaves
-          horizonColor="#5227FF"
-          waveColor="#FF9FFC"
-          crestColor="#FFFFFF"
-          speed={0.4}
-          amplitude={2.5}
-          waveScale={0.6}
-          waveRatio={0.9}
-          swell={35}
-          turbulence={20}
-          tilt={1.11}
-          zoom={1.0}
-          height={5.5}
-          fogDepth={15}
-          detail="medium"
-          brightness={1.0}
-          opacity={1.0}
-          mouseInteraction={true}
-          parallaxStrength={0.5}
-          grain={true}
-          grainIntensity={0.05}
-          className="absolute inset-0 w-full h-full"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent pointer-events-none" />
-        <div className="absolute inset-0 flex flex-col justify-end p-6 pointer-events-none">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center space-x-2 drop-shadow-md">
-            <span>Engineering Intelligence Console</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-zinc-200/90 font-medium drop-shadow">
-            Grounded multi-modal RAG across microservice architecture, ADRs, postmortems, and code.
-          </p>
-        </div>
+      {/* Console Header */}
+      <div className="pt-2 pb-1 space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center space-x-2 drop-shadow-sm">
+          <span>Engineering Intelligence Console</span>
+        </h1>
+        <p className="text-xs sm:text-sm text-zinc-400 font-medium">
+          Grounded multi-modal RAG across microservice architecture, ADRs, postmortems, and code.
+        </p>
       </div>
 
       {/* Interactive Search Input Box */}
-      <div className="bg-[#111113] border border-zinc-800 rounded-2xl p-3 shadow-xl focus-within:border-zinc-600 transition">
+      <div className="bg-[#111113]/90 backdrop-blur-md border border-zinc-800 rounded-2xl p-3 shadow-2xl focus-within:border-zinc-600 transition">
         <form
           onSubmit={(e) => {
             e.preventDefault();
