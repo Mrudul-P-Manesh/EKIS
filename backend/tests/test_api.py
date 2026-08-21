@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+from backend.app.config import settings
 from backend.app.main import app
 
 client = TestClient(app)
@@ -12,7 +13,7 @@ def test_api_health():
     assert data["status"] == "healthy"
 
 
-def test_api_query():
+def test_api_query_relevant():
     response = client.post("/api/v1/query/", json={
         "query": "Why is the authentication service returning 401 errors after deployment?",
         "top_k": 5
@@ -21,7 +22,22 @@ def test_api_query():
     data = response.json()
     assert "direct_answer" in data
     assert "confidence" in data
+    assert data["confidence"]["is_sufficient_evidence"] is True
     assert len(data["retrieved_sources"]) > 0
+    assert len(data["citations"]) > 0
+
+
+def test_api_query_unrelated_refusal():
+    response = client.post("/api/v1/query/", json={
+        "query": "Who is the CEO of Tesla?",
+        "top_k": 5
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["direct_answer"] == settings.OUT_OF_DOMAIN_REFUSAL_MESSAGE
+    assert data["confidence"]["is_sufficient_evidence"] is False
+    assert len(data["citations"]) == 0
+    assert len(data["retrieved_sources"]) == 0
 
 
 def test_api_debugger_trace():

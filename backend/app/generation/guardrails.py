@@ -37,7 +37,7 @@ class GroundingGuardrails:
 
         # 4. Check evidence sufficiency
         is_sufficient = llm_response.get("is_sufficient_evidence", True)
-        if not retrieved_chunks or len(available_citations) == 0:
+        if not retrieved_chunks or len(available_citations) == 0 or len(active_citations) == 0:
             is_sufficient = False
 
         contradictions = llm_response.get("contradictions_found", [])
@@ -46,8 +46,9 @@ class GroundingGuardrails:
         base_score = float(llm_response.get("confidence_score", 0.85))
         
         # Penalize if citations are missing when chunks were available
-        if not cited_indices and available_citations:
-            base_score *= 0.65
+        if not active_citations and available_citations:
+            base_score *= 0.50
+            is_sufficient = False
         
         # Penalize invalid citations
         if invalid_citations:
@@ -57,12 +58,14 @@ class GroundingGuardrails:
         if contradictions:
             base_score *= 0.80
 
-        # Penalize if top chunk retrieval score is very low
+        # Weight with top chunk retrieval score
         if retrieved_chunks:
             top_chunk_score = retrieved_chunks[0].score
-            base_score = (base_score * 0.6) + (top_chunk_score * 0.4)
+            base_score = (base_score * 0.5) + (top_chunk_score * 0.5)
+        else:
+            base_score = 0.0
 
-        final_score = round(max(0.05, min(0.99, base_score)), 3)
+        final_score = round(max(0.0, min(0.99, base_score)), 3)
 
         # Determine confidence level
         if not is_sufficient or final_score < self.min_confidence:
@@ -75,17 +78,19 @@ class GroundingGuardrails:
         else:
             level = ConfidenceLevel.LOW
 
-        # If insufficient evidence, adjust answer text to prevent hallucination
+        # If insufficient evidence, enforce standard refusal message
         if not is_sufficient:
-            direct_ans = "The indexed engineering documentation and code repositories do not contain sufficient evidence to answer this question reliably."
-            detailed_exp = "No matching runbooks, architecture decision records (ADRs), or source code files could verify the requested behavior. Please index the relevant service documentation or configuration files."
+            direct_ans = settings.OUT_OF_DOMAIN_REFUSAL_MESSAGE
+            detailed_exp = "The indexed engineering documentation, architecture decision records (ADRs), runbooks, and source code do not contain sufficient evidence to answer this question reliably."
             llm_response["direct_answer"] = direct_ans
             llm_response["detailed_explanation"] = detailed_exp
+            llm_response["evidence_summary"] = "No matching engineering sources found."
+            active_citations = []
 
         confidence = ConfidenceIndicator(
-            score=final_score,
+            score=final_score if is_sufficient else 0.0,
             level=level,
-            reasoning=f"Grounded in {len(active_citations)} valid source citations with confidence level {level}.",
+            reasoning=f"Grounded in {len(active_citations)} valid source citations with confidence level {level}." if is_sufficient else "Insufficient retrieval evidence. Query rejected.",
             is_sufficient_evidence=is_sufficient,
             contradictions_found=contradictions
         )

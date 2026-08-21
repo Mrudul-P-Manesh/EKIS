@@ -42,13 +42,15 @@ class Settings(BaseSettings):
     # Metadata DB
     DATABASE_URL: str = "sqlite:///./data/ekis_metadata.db"
 
-    # Retrieval Defaults
+    # Retrieval & Relevance Thresholds
     RETRIEVAL_TOP_K_VECTOR: int = 8
     RETRIEVAL_TOP_K_BM25: int = 8
     RETRIEVAL_TOP_K_GRAPH: int = 5
     RETRIEVAL_RRF_K: int = 60
     RETRIEVAL_RERANK_TOP_N: int = 5
     MIN_CONFIDENCE_THRESHOLD: float = 0.35
+    MIN_RELEVANCE_THRESHOLD: float = 0.40
+    OUT_OF_DOMAIN_REFUSAL_MESSAGE: str = "I could not find relevant information in the engineering knowledge base."
 
     # Storage Paths
     DATA_DIR: str = "./data"
