@@ -1,11 +1,10 @@
-version: '3.8'
-
 services:
+
   # FastAPI Backend
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: ekis-backend
     ports:
       - "8000:8000"
@@ -19,9 +18,9 @@ services:
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=password123
       - USE_IN_MEMORY_GRAPH=false
-      - DATABASE_URL=sqlite:///./data/ekis_metadata.db
+      - DATABASE_URL=sqlite:////app/data/ekis_metadata.db
     volumes:
-      - ./data:/app/data
+      - backend_data:/app/data
     depends_on:
       - qdrant
       - neo4j
@@ -32,6 +31,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     container_name: ekis-frontend
     ports:
       - "3000:3000"
@@ -49,7 +50,7 @@ services:
       - "6333:6333"
       - "6334:6334"
     volumes:
-      - ./data/qdrant_storage:/qdrant/storage
+      - qdrant_data:/qdrant/storage
     restart: unless-stopped
 
   # Neo4j Knowledge Graph Database
@@ -63,5 +64,10 @@ services:
       - NEO4J_AUTH=neo4j/password123
       - NEO4J_PLUGINS=["apoc"]
     volumes:
-      - ./data/neo4j_data:/data
+      - neo4j_data:/data
     restart: unless-stopped
+
+volumes:
+  backend_data:
+  qdrant_data:
+  neo4j_data:
