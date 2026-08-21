@@ -25,30 +25,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Full-Screen Ambient 3D Gradient Waves Background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <GradientWaves
-          horizonColor="#4f46e5"
-          waveColor="#db2777"
+          horizonColor="#4338ca"
+          waveColor="#86198f"
           crestColor="#38bdf8"
-          speed={0.45}
-          amplitude={3.4}
-          waveScale={1.35}
-          waveRatio={1.2}
-          swell={45}
-          turbulence={28}
-          tilt={1.12}
-          zoom={1.05}
-          height={4.2}
-          fogDepth={22}
+          speed={0.3}
+          amplitude={2.2}
+          waveScale={0.85}
+          waveRatio={0.95}
+          swell={30}
+          turbulence={18}
+          tilt={1.11}
+          zoom={1.0}
+          height={5.0}
+          fogDepth={17}
           detail="medium"
-          brightness={1.35}
-          opacity={1.0}
+          brightness={1.05}
+          opacity={0.85}
           mouseInteraction={true}
-          parallaxStrength={0.55}
+          parallaxStrength={0.45}
           grain={true}
           grainIntensity={0.03}
           className="w-full h-full"
         />
-        {/* Transparent radial vignette for clean text readability while preserving full wave visibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#09090b]/40 via-[#09090b]/25 to-[#09090b]/55 pointer-events-none" />
+        {/* Balanced vignette overlay for sleek dark-mode readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#09090b]/60 via-[#09090b]/45 to-[#09090b]/70 backdrop-blur-[1px] pointer-events-none" />
       </div>
 
       {/* Main Foreground Interface */}
@@ -66,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </motion.div>
           </AnimatePresence>
         </main>
-        <footer className="border-t border-zinc-800/60 bg-[#09090b]/60 backdrop-blur-md py-6 text-center text-xs text-zinc-400 font-mono">
+        <footer className="border-t border-zinc-800/60 bg-[#09090b]/70 backdrop-blur-md py-6 text-center text-xs text-zinc-400 font-mono">
           <p>EKIS • Engineering Knowledge Intelligence System • Hybrid RAG Engine</p>
         </footer>
       </div>
