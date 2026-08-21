@@ -5,6 +5,7 @@ import { submitQuery } from "@/lib/api";
 import { AnswerResponse, Citation } from "@/lib/types";
 import { CitationModal } from "@/components/CitationModal";
 import { PipelineVisualizer } from "@/components/PipelineVisualizer";
+import GradientWaves from "@/components/GradientWaves";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 
@@ -162,10 +163,33 @@ export default function QueryConsolePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-100 flex items-center space-x-2">
+      {/* Ambient Gradient Wave Hero Backdrop */}
+      <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-zinc-800/80 shadow-2xl bg-zinc-950">
+        <GradientWaves
+          horizonColor="#09090b"
+          waveColor="#1e1b4b"
+          crestColor="#3b82f6"
+          speed={0.25}
+          amplitude={1.8}
+          waveScale={0.5}
+          waveRatio={0.85}
+          swell={25}
+          turbulence={15}
+          tilt={1.15}
+          zoom={1.1}
+          height={5.0}
+          fogDepth={16}
+          detail="medium"
+          brightness={1.1}
+          opacity={0.65}
+          mouseInteraction={true}
+          parallaxStrength={0.4}
+          grain={true}
+          grainIntensity={0.04}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 flex flex-col justify-end p-5 pointer-events-none">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 flex items-center space-x-2">
             <span>Engineering Intelligence Console</span>
           </h1>
           <p className="text-xs text-zinc-400">
